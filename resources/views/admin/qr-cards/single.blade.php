@@ -54,10 +54,10 @@
                 {{ $student->name }}
             </h2>
             <div class="text-xs font-mono font-bold text-blue-600 mt-0.5">
-                NIS: {{ $student->nis }}
+                NISN: {{ $student->nisn ?: $student->nis }}
             </div>
-            <div class="text-[11px] text-slate-500 mt-1">
-                Tahun Pelajaran 2025/2026
+            <div class="text-[11px] text-slate-500 mt-0.5">
+                {{ $student->gender === 'L' ? 'Laki-laki' : 'Perempuan' }} • Kelas {{ $student->currentClass?->name ?? '-' }}
             </div>
         </div>
 

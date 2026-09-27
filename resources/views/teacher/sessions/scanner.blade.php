@@ -187,7 +187,7 @@
                              }">
                             <div class="min-w-0 pr-2">
                                 <div class="font-semibold text-slate-900 text-xs truncate" x-text="st.name"></div>
-                                <div class="text-[10px] text-slate-500 font-mono" x-text="'NIS: ' + st.nis"></div>
+                                <div class="text-[10px] text-slate-500 font-mono" x-text="'NISN: ' + (st.nisn || st.nis)"></div>
                             </div>
 
                             <div class="text-right shrink-0 flex items-center space-x-1.5">
@@ -253,7 +253,7 @@
                                 class="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-300 bg-white">
                             <option value="">-- Pilih Siswa --</option>
                             <template x-for="st in studentsList" :key="st.id">
-                                <option :value="st.id" x-text="st.name + ' (' + st.nis + ')'"></option>
+                                <option :value="st.id" x-text="st.name + ' (' + (st.nisn || st.nis) + ')'"></option>
                             </template>
                         </select>
                     </div>
@@ -406,7 +406,7 @@
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-100 text-xs sm:text-sm font-bold text-slate-700">
                             <span x-text="'Kelas ' + popupModal.studentClass"></span>
                             <span>•</span>
-                            <span class="font-mono text-blue-600" x-text="'NIS: ' + popupModal.studentNis"></span>
+                            <span class="font-mono text-blue-600" x-text="'NISN: ' + popupModal.studentNis"></span>
                         </div>
                     </template>
 

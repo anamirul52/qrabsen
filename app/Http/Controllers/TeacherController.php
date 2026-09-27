@@ -180,7 +180,9 @@ class TeacherController extends Controller
             return [
                 'id' => $s->id,
                 'name' => $s->name,
-                'nis' => $s->nis,
+                'nis' => $s->nisn ?: $s->nis,
+                'nisn' => $s->nisn ?: $s->nis,
+                'gender' => $s->gender,
                 'status' => $rec ? $rec->status : null,
                 'time' => $rec && $rec->scanned_at ? $rec->scanned_at->format('H:i') : null,
             ];

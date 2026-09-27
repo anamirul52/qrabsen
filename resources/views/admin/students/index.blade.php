@@ -14,7 +14,7 @@
                         <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3 text-gray-400">
                             <i data-lucide="search" class="w-4 h-4"></i>
                         </div>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, NIS, atau email..."
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NISN..."
                                class="py-2 ps-9 pe-3 block w-full border border-gray-200 rounded-lg text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500">
                     </div>
 
@@ -29,16 +29,7 @@
                         @endforeach
                     </select>
 
-                    <!-- Status Filter -->
-                    <select name="status" onchange="this.form.submit()"
-                            class="py-2 px-3 block border border-gray-200 rounded-lg text-xs sm:text-sm text-gray-800 bg-white focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">Semua Status</option>
-                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Tidak Aktif</option>
-                        <option value="graduated" {{ request('status') === 'graduated' ? 'selected' : '' }}>Lulus</option>
-                    </select>
-
-                    @if (request()->hasAny(['search', 'class_id', 'status']))
+                    @if (request()->hasAny(['search', 'class_id']))
                         <a href="{{ route('admin.students.index') }}" class="py-2 px-2.5 inline-flex items-center text-gray-400 hover:text-gray-600 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs" title="Reset filter">
                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                         </a>
@@ -85,10 +76,10 @@
                     <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm text-start">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="py-3 px-3 sm:px-4 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">Siswa</th>
-                                <th class="py-3 px-2.5 sm:px-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">NIS / NISN</th>
+                                <th class="py-3 px-3 sm:px-4 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">Nama Siswa</th>
                                 <th class="py-3 px-2.5 sm:px-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">Kelas</th>
-                                <th class="py-3 px-2.5 sm:px-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">Status</th>
+                                <th class="py-3 px-2.5 sm:px-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">NISN</th>
+                                <th class="py-3 px-2.5 sm:px-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">Jenis Kelamin</th>
                                 <th class="py-3 px-2.5 sm:px-3 text-start text-xs font-semibold uppercase tracking-wider text-gray-700">Kartu QR</th>
                                 <th class="py-3 px-3 sm:px-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-700">Aksi</th>
                             </tr>
@@ -96,24 +87,37 @@
                         <tbody class="divide-y divide-gray-200">
                             @forelse ($students as $student)
                                 <tr class="hover:bg-gray-50 transition">
+                                    <!-- 1. Nama Siswa -->
                                     <td class="py-3 px-3 sm:px-4">
-                                        <div class="font-semibold text-gray-900">{{ $student->name }}</div>
-                                        <div class="text-[11px] text-gray-500 truncate max-w-[180px] sm:max-w-xs">{{ $student->user?->email }}</div>
+                                        <div class="font-bold text-gray-900">{{ $student->name }}</div>
                                     </td>
-                                    <td class="py-3 px-2.5 sm:px-3 font-mono">
-                                        <div class="text-gray-900 font-medium">{{ $student->nis }}</div>
-                                        <div class="text-[10px] text-gray-400">{{ $student->nisn ?? '-' }}</div>
-                                    </td>
+
+                                    <!-- 2. Kelas -->
                                     <td class="py-3 px-2.5 sm:px-3">
-                                        <span class="inline-flex items-center py-0.5 px-2 rounded-md bg-gray-100 font-semibold text-gray-800 text-xs border border-gray-200/60">
-                                            {{ $student->currentClass?->name ?? 'Belum ada' }}
+                                        <span class="inline-flex items-center py-0.5 px-2.5 rounded-lg bg-blue-50 font-bold text-blue-700 text-xs border border-blue-200/60">
+                                            Kelas {{ $student->currentClass?->name ?? '-' }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-2.5 sm:px-3">
-                                        <span class="inline-flex items-center gap-x-1 py-0.5 px-2 rounded-full text-[10px] font-semibold uppercase tracking-wide {{ $student->status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600' }}">
-                                            {{ $student->status === 'active' ? 'Aktif' : $student->status }}
-                                        </span>
+
+                                    <!-- 3. NISN -->
+                                    <td class="py-3 px-2.5 sm:px-3 font-mono font-bold text-gray-800 text-xs sm:text-sm">
+                                        {{ $student->nisn ?: $student->nis }}
                                     </td>
+
+                                    <!-- 4. Jenis Kelamin -->
+                                    <td class="py-3 px-2.5 sm:px-3">
+                                        @if ($student->gender === 'P')
+                                            <span class="inline-flex items-center py-0.5 px-2.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                                Perempuan (P)
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center py-0.5 px-2.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                Laki-laki (L)
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Status Kartu QR -->
                                     <td class="py-3 px-2.5 sm:px-3">
                                         @if ($student->activeQrToken)
                                             <span class="inline-flex items-center gap-x-1 text-emerald-700 bg-emerald-50 border border-emerald-200 py-0.5 px-2 rounded-md text-[11px] font-mono">
@@ -124,6 +128,8 @@
                                             <span class="text-rose-600 text-[11px] font-medium">Belum ada QR</span>
                                         @endif
                                     </td>
+
+                                    <!-- Aksi -->
                                     <td class="py-3 px-3 sm:px-4 text-end whitespace-nowrap">
                                         <div class="inline-flex items-center gap-x-1">
                                             <!-- Print QR Card -->
@@ -205,19 +211,18 @@
 
                     <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-gray-800">Format Kolom Header Excel:</span>
+                            <span class="font-bold text-gray-800">4 Kolom Header Excel:</span>
                             <a href="{{ route('admin.students.template') }}" class="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1 text-[11px]">
                                 <i data-lucide="download" class="w-3 h-3"></i>
                                 <span>Unduh Template</span>
                             </a>
                         </div>
                         <div class="bg-white p-2 rounded-lg border border-gray-200 font-mono text-[11px] text-gray-700 overflow-x-auto whitespace-nowrap">
-                            nis, nisn, name, gender, class_name, email, phone
+                            Nama Siswa, Kelas, NISN, Jenis Kelamin
                         </div>
                         <ul class="text-[11px] text-gray-500 space-y-1 list-disc list-inside">
-                            <li><strong>nis</strong>, <strong>name</strong>, &amp; <strong>email</strong> wajib diisi untuk tiap baris.</li>
-                            <li><strong>gender</strong>: <code class="text-gray-700 font-mono">L</code> (Laki-laki) atau <code class="text-gray-700 font-mono">P</code> (Perempuan).</li>
-                            <li>Password default akun siswa baru: <code class="font-mono text-gray-800 font-semibold">password</code>.</li>
+                            <li><strong>Nama Siswa</strong>, <strong>Kelas</strong>, &amp; <strong>NISN</strong> wajib diisi untuk tiap baris.</li>
+                            <li><strong>Jenis Kelamin</strong>: <code class="text-gray-700 font-mono">L</code> (Laki-laki) atau <code class="text-gray-700 font-mono">P</code> (Perempuan).</li>
                         </ul>
                     </div>
 

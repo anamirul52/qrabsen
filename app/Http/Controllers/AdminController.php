@@ -123,30 +123,25 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'nis' => ['required', 'string', 'max:50', 'unique:students,nis'],
-            'nisn' => ['nullable', 'string', 'max:50', 'unique:students,nisn'],
-            'gender' => ['required', 'in:L,P'],
             'class_id' => ['required', 'exists:classes,id'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'password' => ['nullable', 'string', 'min:6'],
+            'nisn' => ['required', 'string', 'max:50', 'unique:students,nisn'],
+            'gender' => ['required', 'in:L,P'],
         ]);
 
         DB::transaction(function () use ($validated) {
             $user = User::create([
                 'name' => $validated['name'],
-                'email' => $validated['email'],
-                'username' => 'nis' . $validated['nis'],
+                'email' => $validated['nisn'] . '@siswa.sipres.id',
+                'username' => $validated['nisn'],
                 'role' => 'student',
-                'phone' => $validated['phone'] ?? null,
-                'password' => Hash::make($validated['password'] ?? 'password'),
+                'password' => Hash::make('password'),
                 'is_active' => true,
             ]);
 
             $student = Student::create([
                 'user_id' => $user->id,
-                'nis' => $validated['nis'],
-                'nisn' => $validated['nisn'] ?? null,
+                'nis' => $validated['nisn'],
+                'nisn' => $validated['nisn'],
                 'gender' => $validated['gender'],
                 'class_id' => $validated['class_id'],
                 'status' => 'active',
@@ -155,7 +150,7 @@ class AdminController extends Controller
             // Create initial active QR token
             QrToken::generateForStudent($student->id);
 
-            AuditLog::log('tambah_siswa', "Menambahkan siswa baru {$student->name} (NIS: {$student->nis})", 'Student', (string)$student->id);
+            AuditLog::log('tambah_siswa', "Menambahkan siswa baru {$student->name} (NISN: {$student->nisn})", 'Student', (string)$student->id);
         });
 
         return redirect()->route('admin.students.index')->with('success', 'Siswa berhasil ditambahkan dan QR Code telah dibuat.');
@@ -171,39 +166,26 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email,' . $student->user_id],
-            'nis' => ['required', 'string', 'max:50', 'unique:students,nis,' . $student->id],
-            'nisn' => ['nullable', 'string', 'max:50', 'unique:students,nisn,' . $student->id],
-            'gender' => ['required', 'in:L,P'],
             'class_id' => ['required', 'exists:classes,id'],
-            'status' => ['required', 'in:active,inactive,graduated'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'password' => ['nullable', 'string', 'min:6'],
+            'nisn' => ['required', 'string', 'max:50', 'unique:students,nisn,' . $student->id],
+            'gender' => ['required', 'in:L,P'],
         ]);
 
         DB::transaction(function () use ($validated, $student) {
-            $userData = [
+            $student->user->update([
                 'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'is_active' => ($validated['status'] === 'active'),
-            ];
-
-            if (!empty($validated['password'])) {
-                $userData['password'] = Hash::make($validated['password']);
-            }
-
-            $student->user->update($userData);
-
-            $student->update([
-                'nis' => $validated['nis'],
-                'nisn' => $validated['nisn'] ?? null,
-                'gender' => $validated['gender'],
-                'class_id' => $validated['class_id'],
-                'status' => $validated['status'],
+                'email' => $validated['nisn'] . '@siswa.sipres.id',
+                'username' => $validated['nisn'],
             ]);
 
-            AuditLog::log('edit_siswa', "Memperbarui data siswa {$student->name} (NIS: {$student->nis})", 'Student', (string)$student->id);
+            $student->update([
+                'nis' => $validated['nisn'],
+                'nisn' => $validated['nisn'],
+                'gender' => $validated['gender'],
+                'class_id' => $validated['class_id'],
+            ]);
+
+            AuditLog::log('edit_siswa', "Memperbarui data siswa {$student->name} (NISN: {$student->nisn})", 'Student', (string)$student->id);
         });
 
         return redirect()->route('admin.students.index')->with('success', 'Data siswa berhasil diperbarui.');
@@ -277,11 +259,10 @@ class AdminController extends Controller
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('nis', 'like', "%{$search}%")
-                  ->orWhere('nisn', 'like', "%{$search}%")
+                $q->where('nisn', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                         ->orWhere('email', 'like', "%{$search}%");
+                      $uq->where('name', 'like', "%{$search}%");
                   });
             });
         }
@@ -290,28 +271,19 @@ class AdminController extends Controller
             $query->where('class_id', $classId);
         }
 
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
+        $students = $query->orderBy('class_id')->get();
 
-        $students = $query->orderBy('nis')->get();
-
-        $headers = ['No', 'NIS', 'NISN', 'Nama Siswa', 'Jenis Kelamin', 'Kelas', 'Email', 'No. Telepon', 'Status', 'Status QR'];
+        $headers = ['No', 'Nama Siswa', 'Kelas', 'NISN', 'Jenis Kelamin'];
         $rows = [];
         $no = 1;
 
         foreach ($students as $s) {
             $rows[] = [
                 $no++,
-                (string)$s->nis,
-                (string)($s->nisn ?? '-'),
                 $s->user?->name ?? 'Siswa',
-                $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
                 $s->currentClass?->name ?? '-',
-                $s->user?->email ?? '-',
-                (string)($s->user?->phone ?? '-'),
-                ucfirst($s->status),
-                $s->activeQrToken ? 'Aktif' : 'Belum Ada',
+                (string)($s->nisn ?: $s->nis),
+                $s->gender === 'L' ? 'Laki-laki' : 'Perempuan',
             ];
         }
 
@@ -325,11 +297,11 @@ class AdminController extends Controller
      */
     public function downloadStudentTemplate(ExcelService $excel)
     {
-        $headers = ['nis', 'nisn', 'name', 'gender', 'class_name', 'email', 'phone'];
+        $headers = ['Nama Siswa', 'Kelas', 'NISN', 'Jenis Kelamin'];
         $samples = [
-            ['24095', '0081234567', 'Ahmad Fauzi', 'L', '8A', 'ahmad.fauzi@sipres.test', '081234567890'],
-            ['24096', '0081234568', 'Siti Nurhaliza', 'P', '8A', 'siti.nur@sipres.test', '081234567891'],
-            ['24097', '0081234569', 'Bagus Prasetyo', 'L', '7A', 'bagus.p@sipres.test', '081234567892'],
+            ['Ahmad Fauzi', '7A', '0081234567', 'L'],
+            ['Siti Nurhaliza', '7A', '0087654321', 'P'],
+            ['Bagus Prasetyo', '8B', '0089988776', 'L'],
         ];
 
         return $excel->downloadTemplate('template_import_siswa.xlsx', $headers, $samples, 'Template Siswa');
@@ -360,52 +332,53 @@ class AdminController extends Controller
             foreach ($rows as $row) {
                 $rowNum++;
 
-                $nis = trim($row['nis'] ?? '');
-                $nisn = trim($row['nisn'] ?? '');
-                $name = trim($row['name'] ?? ($row['nama'] ?? ''));
-                $gender = strtoupper(trim($row['gender'] ?? ($row['jenis_kelamin'] ?? 'L')));
-                $className = trim($row['class_name'] ?? ($row['kelas'] ?? ''));
-                $email = trim($row['email'] ?? '');
-                $phone = trim($row['phone'] ?? ($row['telepon'] ?? ''));
+                $name = trim($row['nama_siswa'] ?? ($row['nama'] ?? ($row['name'] ?? '')));
+                $className = trim($row['kelas'] ?? ($row['class'] ?? ($row['class_name'] ?? '')));
+                $nisn = trim($row['nisn'] ?? ($row['nis'] ?? ''));
+                $genderRaw = strtoupper(trim($row['jenis_kelamin'] ?? ($row['gender'] ?? ($row['jk'] ?? 'L'))));
+                
+                $gender = 'L';
+                if (str_starts_with($genderRaw, 'P') || $genderRaw === 'PEREMPUAN') {
+                    $gender = 'P';
+                }
 
-                if (empty($name) || empty($nis) || empty($email)) {
-                    $errors[] = "Baris {$rowNum}: Kolom Nama, NIS, dan Email wajib diisi.";
+                if (empty($name) || empty($nisn)) {
+                    $errors[] = "Baris {$rowNum}: Kolom Nama Siswa dan NISN wajib diisi.";
                     continue;
                 }
 
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $errors[] = "Baris {$rowNum}: Format email '{$email}' tidak valid.";
+                $class = null;
+                if (!empty($className)) {
+                    $class = SchoolClass::where('name', $className)->first();
+                    if (!$class) {
+                        $class = SchoolClass::firstOrCreate(
+                            ['name' => $className],
+                            ['level' => preg_match('/^[789]/', $className, $m) ? $m[0] : '7']
+                        );
+                    }
+                }
+
+                if (Student::where('nisn', $nisn)->orWhere('nis', $nisn)->exists()) {
+                    $errors[] = "Baris {$rowNum}: Siswa dengan NISN '{$nisn}' sudah terdaftar.";
                     continue;
                 }
 
-                $class = SchoolClass::where('name', $className)->first();
-                if (!$class && !empty($className)) {
-                    $class = SchoolClass::firstOrCreate(
-                        ['name' => $className],
-                        ['level' => preg_match('/^[789]/', $className, $m) ? $m[0] : '7']
-                    );
-                }
-
-                if (User::where('email', $email)->exists() || Student::where('nis', $nis)->exists()) {
-                    $errors[] = "Baris {$rowNum}: Email '{$email}' atau NIS '{$nis}' sudah terdaftar.";
-                    continue;
-                }
+                $email = $nisn . '@siswa.sipres.id';
 
                 $user = User::create([
                     'name' => $name,
                     'email' => $email,
-                    'username' => 'nis' . $nis,
+                    'username' => $nisn,
                     'role' => 'student',
-                    'phone' => $phone ?: null,
                     'password' => Hash::make('password'),
                     'is_active' => true,
                 ]);
 
                 $student = Student::create([
                     'user_id' => $user->id,
-                    'nis' => $nis,
-                    'nisn' => $nisn ?: null,
-                    'gender' => in_array($gender, ['L', 'P']) ? $gender : 'L',
+                    'nis' => $nisn,
+                    'nisn' => $nisn,
+                    'gender' => $gender,
                     'class_id' => $class?->id,
                     'status' => 'active',
                 ]);

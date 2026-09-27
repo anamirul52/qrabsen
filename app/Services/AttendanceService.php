@@ -88,7 +88,9 @@ class AttendanceService
                 'message' => 'Siswa sudah melakukan presensi pada sesi ini.',
                 'student' => [
                     'name' => $student->name,
-                    'nis' => $student->nis,
+                    'nis' => $student->nisn ?: $student->nis,
+                    'nisn' => $student->nisn ?: $student->nis,
+                    'gender' => $student->gender,
                     'class' => $session->schoolClass->name,
                 ],
                 'status' => $existing->status,
@@ -126,7 +128,9 @@ class AttendanceService
                     'message' => 'Siswa sudah melakukan presensi pada sesi ini.',
                     'student' => [
                         'name' => $student->name,
-                        'nis' => $student->nis,
+                        'nis' => $student->nisn ?: $student->nis,
+                        'nisn' => $student->nisn ?: $student->nis,
+                        'gender' => $student->gender,
                         'class' => $session->schoolClass->name,
                     ],
                     'status' => $already ? $already->status : $status,
@@ -139,7 +143,7 @@ class AttendanceService
         // 8. Audit Log
         AuditLog::log(
             'scan_qr',
-            "Presensi {$status} siswa {$student->name} (NIS: {$student->nis}) pada sesi {$session->schoolClass->name} - {$session->subject->name}",
+            "Presensi {$status} siswa {$student->name} (NISN: {$student->nisn}) pada sesi {$session->schoolClass->name} - {$session->subject->name}",
             'AttendanceRecord',
             (string) $record->id
         );
@@ -153,7 +157,9 @@ class AttendanceService
             'message' => $status === AttendanceRecord::STATUS_HADIR ? 'Presensi Berhasil' : 'Presensi Tercatat (Terlambat)',
             'student' => [
                 'name' => $student->name,
-                'nis' => $student->nis,
+                'nis' => $student->nisn ?: $student->nis,
+                'nisn' => $student->nisn ?: $student->nis,
+                'gender' => $student->gender,
                 'class' => $session->schoolClass->name,
             ],
             'scanned_at' => $record->scanned_at->format('H:i:s'),

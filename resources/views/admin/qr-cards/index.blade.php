@@ -73,15 +73,15 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <span class="text-[9px] text-gray-500 uppercase block font-semibold">NIS</span>
+                                        <span class="text-[9px] text-gray-500 uppercase block font-semibold">NISN</span>
                                         <div class="font-mono text-xs font-bold text-gray-900">
-                                            {{ $st->nis }}
+                                            {{ $st->nisn ?: $st->nis }}
                                         </div>
                                     </div>
                                     <div>
-                                        <span class="text-[9px] text-gray-500 uppercase block font-semibold">Tahun Pelajaran</span>
-                                        <div class="text-[10px] sm:text-[11px] font-medium text-gray-700">
-                                            2025/2026 Ganjil
+                                        <span class="text-[9px] text-gray-500 uppercase block font-semibold">Jenis Kelamin</span>
+                                        <div class="text-[10px] sm:text-[11px] font-semibold text-gray-700">
+                                            {{ $st->gender === 'L' ? 'Laki-laki (L)' : 'Perempuan (P)' }}
                                         </div>
                                     </div>
                                 </div>

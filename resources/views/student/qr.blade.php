@@ -25,7 +25,7 @@
                     {{ $student->name }}
                 </h2>
                 <div class="text-xs font-medium text-gray-500">
-                    Kelas <strong class="text-gray-900">{{ $student->currentClass?->name ?? '-' }}</strong> • NIS: <span class="font-mono font-bold text-blue-600">{{ $student->nis }}</span>
+                    Kelas <strong class="text-gray-900">{{ $student->currentClass?->name ?? '-' }}</strong> • NISN: <span class="font-mono font-bold text-blue-600">{{ $student->nisn ?: $student->nis }}</span> • <span>{{ $student->gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</span>
                 </div>
                 <div class="pt-1.5">
                     <span class="inline-flex items-center gap-1.5 py-0.5 px-2.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
