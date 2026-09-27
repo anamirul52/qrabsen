@@ -305,7 +305,7 @@
                             <option value="">- Bukan Wali Kelas -</option>
                             @foreach ($classes as $c)
                                 <option value="{{ $c->id }}">
-                                    Kelas {{ $c->name }} (Tingkat {{ $c->level }})
+                                    Kelas {{ $c->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -424,7 +424,7 @@
                             <option value="">- Bukan Wali Kelas -</option>
                             @foreach ($classes as $c)
                                 <option value="{{ $c->id }}">
-                                    Kelas {{ $c->name }} (Tingkat {{ $c->level }})
+                                    Kelas {{ $c->name }}
                                 </option>
                             @endforeach
                         </select>

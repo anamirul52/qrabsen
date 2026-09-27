@@ -66,6 +66,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Classes Management
     Route::get('/classes', [AdminController::class, 'classes'])->name('classes.index');
+    Route::post('/classes', [AdminController::class, 'storeClass'])->name('classes.store');
+    Route::get('/classes/template', [AdminController::class, 'downloadClassTemplate'])->name('classes.template');
+    Route::post('/classes/import', [AdminController::class, 'importClasses'])->name('classes.import');
+    Route::put('/classes/{class}', [AdminController::class, 'updateClass'])->name('classes.update');
+    Route::delete('/classes/{class}', [AdminController::class, 'destroyClass'])->name('classes.destroy');
 
     // Subjects Management (Mata Pelajaran)
     Route::get('/subjects', [AdminController::class, 'subjects'])->name('subjects.index');

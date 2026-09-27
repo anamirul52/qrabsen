@@ -739,6 +739,140 @@ class AdminController extends Controller
         return view('admin.classes.index', compact('classes', 'teachers'));
     }
 
+    public function storeClass(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50', 'unique:classes,name'],
+            'homeroom_teacher_id' => ['nullable', 'exists:teachers,id'],
+        ]);
+
+        $name = strtoupper(trim($validated['name']));
+        $level = '7';
+        if (preg_match('/^[789]/', $name, $m)) {
+            $level = $m[0];
+        }
+
+        $class = SchoolClass::create([
+            'name' => $name,
+            'level' => $level,
+            'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?: null,
+        ]);
+
+        AuditLog::log('tambah_kelas', "Menambahkan kelas {$class->name}", 'SchoolClass', (string)$class->id);
+
+        return redirect()->route('admin.classes.index')->with('success', "Kelas {$class->name} berhasil ditambahkan.");
+    }
+
+    public function updateClass(Request $request, SchoolClass $class)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50', 'unique:classes,name,' . $class->id],
+            'homeroom_teacher_id' => ['nullable', 'exists:teachers,id'],
+        ]);
+
+        $name = strtoupper(trim($validated['name']));
+        $level = '7';
+        if (preg_match('/^[789]/', $name, $m)) {
+            $level = $m[0];
+        }
+
+        $class->update([
+            'name' => $name,
+            'level' => $level,
+            'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?: null,
+        ]);
+
+        AuditLog::log('edit_kelas', "Memperbarui kelas {$class->name}", 'SchoolClass', (string)$class->id);
+
+        return redirect()->route('admin.classes.index')->with('success', "Kelas {$class->name} berhasil diperbarui.");
+    }
+
+    public function destroyClass(SchoolClass $class)
+    {
+        $studentCount = $class->students()->count();
+        if ($studentCount > 0) {
+            return back()->with('error', "Kelas {$class->name} tidak dapat dihapus karena masih memiliki {$studentCount} siswa terdaftar.");
+        }
+
+        $name = $class->name;
+        $class->delete();
+
+        AuditLog::log('hapus_kelas', "Menghapus kelas {$name}", 'SchoolClass');
+
+        return redirect()->route('admin.classes.index')->with('success', "Kelas {$name} berhasil dihapus.");
+    }
+
+    public function downloadClassTemplate(ExcelService $excel)
+    {
+        $headers = ['Nama Kelas'];
+        $samples = [
+            ['7A'],
+            ['7B'],
+            ['7C'],
+            ['8A'],
+            ['8B'],
+            ['8C'],
+            ['9A'],
+            ['9B'],
+            ['9C'],
+        ];
+
+        return $excel->downloadTemplate('template_import_kelas.xlsx', $headers, $samples, 'Template Kelas');
+    }
+
+    public function importClasses(Request $request, ExcelService $excel)
+    {
+        $request->validate([
+            'excel_file' => ['required', 'file', 'mimes:xlsx,xls', 'max:5120'],
+        ]);
+
+        $file = $request->file('excel_file');
+        $rows = $excel->readRows($file->getRealPath());
+
+        if (empty($rows)) {
+            return back()->with('error', 'File Excel kosong atau tidak memiliki baris data yang valid.');
+        }
+
+        $inserted = 0;
+        $errors = [];
+        $rowNum = 1;
+
+        foreach ($rows as $row) {
+            $rowNum++;
+            $name = strtoupper(trim($row['nama_kelas'] ?? ($row['nama'] ?? ($row['kelas'] ?? ($row['name'] ?? ($row['class'] ?? ''))))));
+
+            if (empty($name)) {
+                continue;
+            }
+
+            if (SchoolClass::where('name', $name)->exists()) {
+                $errors[] = "Baris {$rowNum}: Kelas '{$name}' sudah ada.";
+                continue;
+            }
+
+            $level = '7';
+            if (preg_match('/^[789]/', $name, $m)) {
+                $level = $m[0];
+            }
+
+            SchoolClass::create([
+                'name' => $name,
+                'level' => $level,
+            ]);
+
+            $inserted++;
+        }
+
+        AuditLog::log('import_kelas_excel', "Import data kelas Excel berhasil. {$inserted} kelas baru ditambahkan.");
+
+        $message = "Berhasil mengimpor {$inserted} kelas baru dari Excel.";
+        if (count($errors) > 0) {
+            $message .= " Beberapa kelas dilewati (" . count($errors) . "): " . implode('; ', array_slice($errors, 0, 3));
+        }
+
+        return redirect()->route('admin.classes.index')->with('success', $message);
+    }
+
     /**
      * Subjects Management (Kurikulum & Mata Pelajaran)
      */
