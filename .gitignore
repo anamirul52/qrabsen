@@ -26,3 +26,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 cloudflared.exe
+infinityfree.env
+infinityfree_index.php
+sipres_infinityfree.sql
