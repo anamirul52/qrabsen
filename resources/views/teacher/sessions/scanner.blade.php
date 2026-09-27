@@ -340,6 +340,115 @@
             </div>
         </div>
 
+        <!-- Popup Modal Hasil Scan Presensi -->
+        <div x-show="popupModal.show"
+             x-transition:enter="transition ease-out duration-250"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4"
+             @keydown.window.escape="closePopupModal()"
+             style="display: none;">
+            
+            <div @click.away="closePopupModal()"
+                 class="relative w-full max-w-sm sm:max-w-md bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border text-center overflow-hidden transition-all"
+                 :class="{
+                     'border-emerald-200 ring-4 ring-emerald-100/70': popupModal.type === 'HADIR',
+                     'border-amber-200 ring-4 ring-amber-100/70': popupModal.type === 'TERLAMBAT',
+                     'border-blue-200 ring-4 ring-blue-100/70': popupModal.type === 'DUPLICATE',
+                     'border-rose-200 ring-4 ring-rose-100/70': popupModal.type === 'ERROR'
+                 }">
+                
+                <!-- Status Icon Header -->
+                <div class="mb-4">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl mx-auto flex items-center justify-center shadow-lg transition-transform duration-300 transform scale-100"
+                         :class="{
+                             'bg-emerald-500 text-white shadow-emerald-500/30': popupModal.type === 'HADIR',
+                             'bg-amber-500 text-white shadow-amber-500/30': popupModal.type === 'TERLAMBAT',
+                             'bg-blue-500 text-white shadow-blue-500/30': popupModal.type === 'DUPLICATE',
+                             'bg-rose-500 text-white shadow-rose-500/30': popupModal.type === 'ERROR'
+                         }">
+                        <template x-if="popupModal.type === 'HADIR'">
+                            <i data-lucide="check-circle" class="w-10 h-10 sm:w-12 sm:h-12 stroke-[2.5]"></i>
+                        </template>
+                        <template x-if="popupModal.type === 'TERLAMBAT'">
+                            <i data-lucide="clock" class="w-10 h-10 sm:w-12 sm:h-12 stroke-[2.5]"></i>
+                        </template>
+                        <template x-if="popupModal.type === 'DUPLICATE'">
+                            <i data-lucide="alert-circle" class="w-10 h-10 sm:w-12 sm:h-12 stroke-[2.5]"></i>
+                        </template>
+                        <template x-if="popupModal.type === 'ERROR'">
+                            <i data-lucide="x-circle" class="w-10 h-10 sm:w-12 sm:h-12 stroke-[2.5]"></i>
+                        </template>
+                    </div>
+
+                    <!-- Badge Pill -->
+                    <div class="mt-3">
+                        <span class="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 shadow-2xs"
+                              :class="{
+                                  'bg-emerald-100 text-emerald-800 border border-emerald-300': popupModal.type === 'HADIR',
+                                  'bg-amber-100 text-amber-800 border border-amber-300': popupModal.type === 'TERLAMBAT',
+                                  'bg-blue-100 text-blue-800 border border-blue-300': popupModal.type === 'DUPLICATE',
+                                  'bg-rose-100 text-rose-800 border border-rose-300': popupModal.type === 'ERROR'
+                              }"
+                              x-text="popupModal.badgeText">
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Main Text Details -->
+                <div class="space-y-1.5">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 leading-snug" x-text="popupModal.studentName"></h2>
+                    
+                    <template x-if="popupModal.studentClass && popupModal.studentNis && popupModal.studentNis !== '-'">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-100 text-xs sm:text-sm font-bold text-slate-700">
+                            <span x-text="'Kelas ' + popupModal.studentClass"></span>
+                            <span>•</span>
+                            <span class="font-mono text-blue-600" x-text="'NIS: ' + popupModal.studentNis"></span>
+                        </div>
+                    </template>
+
+                    <p class="text-xs sm:text-sm text-slate-600 mt-1" x-text="popupModal.message"></p>
+
+                    <template x-if="popupModal.time && popupModal.time !== '-'">
+                        <div class="pt-2 text-xs font-medium text-slate-500 flex items-center justify-center gap-1.5">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span>Waktu scan:</span>
+                            <span class="font-mono font-bold text-slate-800" x-text="popupModal.time + ' WIB'"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Auto-close countdown progress bar -->
+                <div class="mt-5 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div class="h-full transition-all duration-75 ease-linear rounded-full"
+                         :style="'width: ' + popupModal.timerProgress + '%'"
+                         :class="{
+                             'bg-emerald-500': popupModal.type === 'HADIR',
+                             'bg-amber-500': popupModal.type === 'TERLAMBAT',
+                             'bg-blue-500': popupModal.type === 'DUPLICATE',
+                             'bg-rose-500': popupModal.type === 'ERROR'
+                         }">
+                    </div>
+                </div>
+
+                <!-- Dismiss Button -->
+                <button type="button" @click="closePopupModal()"
+                        class="mt-4 w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold text-white shadow-2xs transition cursor-pointer flex items-center justify-center gap-2"
+                        :class="{
+                            'bg-emerald-600 hover:bg-emerald-700': popupModal.type === 'HADIR',
+                            'bg-amber-600 hover:bg-amber-700': popupModal.type === 'TERLAMBAT',
+                            'bg-blue-600 hover:bg-blue-700': popupModal.type === 'DUPLICATE',
+                            'bg-rose-600 hover:bg-rose-700': popupModal.type === 'ERROR'
+                        }">
+                    <i data-lucide="scan-line" class="w-4 h-4"></i>
+                    <span>Lanjut Scan Berikutnya (Otomatis)</span>
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <!-- Scanner Alpine & Html5Qrcode Core Logic -->
@@ -366,6 +475,18 @@
                     message: '',
                     studentName: '',
                     time: ''
+                },
+                popupModal: {
+                    show: false,
+                    type: 'HADIR',
+                    title: 'BERHASIL ABSEN!',
+                    badgeText: 'HADIR TEPAT WAKTU',
+                    studentName: '',
+                    studentNis: '',
+                    studentClass: '',
+                    time: '',
+                    message: '',
+                    timerProgress: 100
                 },
                 manualForm: {
                     student_id: '',
@@ -450,9 +571,13 @@
                 },
 
                 async onScanSuccess(decodedText) {
+                    if (this.popupModal.show) {
+                        return;
+                    }
+
                     const now = Date.now();
-                    // Debounce same QR within 1.8 seconds to avoid rapid duplicate triggers
-                    if (this.lastScannedCode === decodedText && (now - this.lastScanTimestamp) < 1800) {
+                    // Debounce same QR within 2.5 seconds to avoid rapid duplicate triggers
+                    if (this.lastScannedCode === decodedText && (now - this.lastScanTimestamp) < 2500) {
                         return;
                     }
 
@@ -481,10 +606,13 @@
                     } catch (err) {
                         console.error('Scan request error:', err);
                         this.showFeedback('ERROR', 'KONEKSI GAGAL', 'Terjadi kesalahan komunikasi dengan server.', '-', '-');
+                        this.triggerPopup('ERROR', 'KONEKSI GAGAL', 'ERROR SERVER', 'Gagal Terhubung', '-', '-', '-', 'Terjadi kesalahan komunikasi jaringan dengan server.', 2500);
                         if (window.playBeep) window.playBeep('error');
                     } finally {
                         setTimeout(() => {
-                            this.isProcessing = false;
+                            if (!this.popupModal.show) {
+                                this.isProcessing = false;
+                            }
                         }, 800);
                     }
                 },
@@ -493,7 +621,8 @@
                     if (data.success) {
                         const isLate = (data.status === 'TERLAMBAT');
                         const type = isLate ? 'TERLAMBAT' : 'HADIR';
-                        const title = isLate ? 'PRESENSI TERCATAT (TERLAMBAT)' : 'PRESENSI BERHASIL';
+                        const title = isLate ? 'BERHASIL ABSEN (TERLAMBAT)' : 'BERHASIL ABSEN!';
+                        const badgeText = isLate ? 'TERLAMBAT' : 'HADIR TEPAT WAKTU';
                         
                         this.showFeedback(
                             type,
@@ -501,6 +630,19 @@
                             `Kelas ${data.student.class} • Berhasil dicatat.`,
                             data.student.name,
                             data.scanned_at
+                        );
+
+                        // Trigger Popup Modal Berhasil Absen
+                        this.triggerPopup(
+                            type,
+                            title,
+                            badgeText,
+                            data.student.name,
+                            data.student.nis,
+                            data.student.class,
+                            data.scanned_at,
+                            isLate ? 'Presensi berhasil dicatat namun melewati batas toleransi keterlambatan.' : 'Presensi berhasil dicatat tepat waktu ke sistem presensi SIPRES.',
+                            2500
                         );
 
                         // Sound feedback
@@ -529,6 +671,18 @@
                                 data.student?.name || 'Siswa',
                                 data.scanned_at || '-'
                             );
+
+                            this.triggerPopup(
+                                'DUPLICATE',
+                                'SUDAH ABSEN SEBELUMNYA',
+                                'SUDAH TERCATAT (' + (data.status || 'HADIR') + ')',
+                                data.student?.name || 'Siswa',
+                                data.student?.nis || '-',
+                                data.student?.class || '-',
+                                data.scanned_at || '-',
+                                `Siswa ini sudah melakukan presensi pada pukul ${data.scanned_at} WIB.`,
+                                2300
+                            );
                         } else if (data.code === 'WRONG_CLASS') {
                             this.showFeedback(
                                 'ERROR',
@@ -536,6 +690,18 @@
                                 `Siswa terdaftar di ${data.student?.class}. Sesi ini untuk ${data.session_class}.`,
                                 data.student?.name || 'Siswa',
                                 '-'
+                            );
+
+                            this.triggerPopup(
+                                'ERROR',
+                                'BUKAN SISWA KELAS INI!',
+                                'KELAS BERBEDA',
+                                data.student?.name || 'Siswa',
+                                data.student?.nis || '-',
+                                data.student?.class || '-',
+                                '-',
+                                `Siswa terdaftar di ${data.student?.class}. Sesi ini khusus untuk kelas ${data.session_class}.`,
+                                3000
                             );
                         } else {
                             this.showFeedback(
@@ -545,8 +711,65 @@
                                 '-',
                                 '-'
                             );
+
+                            this.triggerPopup(
+                                'ERROR',
+                                'QR CODE TIDAK VALID',
+                                'TIDAK DIKENAL',
+                                'Data Tidak Valid',
+                                '-',
+                                '-',
+                                '-',
+                                data.message || 'QR code siswa tidak terdaftar atau telah dinonaktifkan.',
+                                2500
+                            );
                         }
                     }
+                },
+
+                triggerPopup(type, title, badgeText, studentName, studentNis, studentClass, time, message, duration = 2500) {
+                    this.popupModal = {
+                        show: true,
+                        type: type,
+                        title: title,
+                        badgeText: badgeText,
+                        studentName: studentName,
+                        studentNis: studentNis,
+                        studentClass: studentClass,
+                        time: time,
+                        message: message,
+                        timerProgress: 100
+                    };
+
+                    this.$nextTick(() => {
+                        if (window.renderLucide) window.renderLucide();
+                    });
+
+                    clearInterval(this._popupInterval);
+                    clearTimeout(this._popupTimeout);
+
+                    const startTime = Date.now();
+                    this._popupInterval = setInterval(() => {
+                        const elapsed = Date.now() - startTime;
+                        const remaining = Math.max(0, duration - elapsed);
+                        this.popupModal.timerProgress = (remaining / duration) * 100;
+                        if (remaining <= 0) {
+                            clearInterval(this._popupInterval);
+                        }
+                    }, 50);
+
+                    this._popupTimeout = setTimeout(() => {
+                        this.closePopupModal();
+                    }, duration);
+                },
+
+                closePopupModal() {
+                    clearInterval(this._popupInterval);
+                    clearTimeout(this._popupTimeout);
+                    this.popupModal.show = false;
+                    setTimeout(() => {
+                        this.isProcessing = false;
+                    }, 350);
                 },
 
                 showFeedback(type, title, message, studentName, time) {

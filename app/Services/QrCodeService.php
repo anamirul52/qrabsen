@@ -13,7 +13,7 @@ class QrCodeService
     {
         return QrCode::size($size)
             ->margin(1)
-            ->errorCorrection('H')
+            ->errorCorrection('L')
             ->generate($content);
     }
 }

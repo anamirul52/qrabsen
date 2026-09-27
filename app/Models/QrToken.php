@@ -44,8 +44,8 @@ class QrToken extends Model
                 'revoked_at' => now(),
             ]);
 
-        // Create new unique token
-        $token = 'STU_' . Str::random(32);
+        // Create new unique token (concise format for simpler, cleaner QR code)
+        $token = 'STU_' . Str::upper(Str::random(12));
 
         return static::create([
             'student_id' => $studentId,
